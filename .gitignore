@@ -1,0 +1,29 @@
+# Entorno virtual
+.venv/
+venv/
+ENV/
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pesos pesados de IA (modelos de aprendizaje profundo)
+*.pt
+*.onnx
+*.engine
+*.weights
+
+# IDEs y Editores
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Logs de ejecución y reportes
+*.log
+logs/
+reports/
