@@ -1,36 +1,33 @@
-# Misión
+# Misión Científica del LabIAR - Quillinchu AI
 
-_Define la razón de ser del proyecto. Es la referencia que decide si una feature "encaja" o no._
+Este documento define la razón de ser del proyecto. Es la referencia que decide si una nueva característica (feature) o módulo "encaja" o no en el desarrollo del sistema de seguimiento autónomo.
 
 ## Qué construimos
 
-Construimos **Quillinchu AI**, una plataforma de software modular estructurada para la investigación científica, que dota a los drones (como el DJI Air 2S) de la capacidad de seguir autónomamente a una persona utilizando visión artificial en tiempo real. Resuelve el problema de la dependencia de hardware externo de telemetría, permitiendo autonomía de vuelo basada únicamente en el análisis visual a través de redes locales (Rosetta Drone).
+Quillinchu AI es una plataforma de software modular y asíncrona para el seguimiento autónomo y en tiempo real de personas mediante drones comerciales de código cerrado. El sistema procesa de forma remota un stream de video de alta definición, detecta y rastrea el objetivo en tierra, calcula dinámicamente comandos de velocidad espacial y los envía de regreso para controlar la navegación de la aeronave de manera segura y robusta.
 
-_Si ayuda, enumera las piezas principales del producto:_
+### Piezas principales del producto:
 
-1. **Visión Desacoplada** — Captura streams de red (UDP/RTSP), detecta cabezas mediante inferencia rápida con YOLOv8 y ejecuta el tracking persistente (Deep SORT).
-2. **Control Autónomo (PID)** — Estima distancias, estabiliza el dron y traduce la información visual en comandos de velocidad (`BODY_NED`) usando la API moderna de MAVSDK.
-3. **Capa de Contingencia y Métricas** — Garantiza la seguridad física mediante geofencing y algoritmos de hovering seguro. Simultáneamente extrae data científica como Hz, latencia y error (RMSE).
+1. **Módulo de Percepción Asíncrona (`src/vision/`)** — Captura el flujo de video H.264 del dron por red, ejecuta inferencia de IA con YOLOv8 (`HeadDetect.pt`) y realiza el seguimiento continuo asignando identificadores únicos mediante Deep SORT.
+2. **Lazo de Control de Vuelo (`src/control/` & `src/navigation/`)** — Calcula los errores espaciales en la imagen mediante controladores PID independientes y traduce las salidas en comandos de velocidad asíncronos (`BODY_NED`) enviados a la aeronave vía MAVSDK-Python.
+3. **Capa de Seguridad y Contingencias (`src/safety/`)** — Filtra las señales de velocidad bajo límites físicos de saturación, restringe el vuelo mediante Geofencing y activa la detención automática en el aire (Hovering) ante la pérdida del objetivo.
+4. **Sistema de Métricas Científicas (`src/metrics/`)** — Registra logs con marcas de tiempo de alta precisión y genera automáticamente reportes científicos de desempeño (Frequency Update en Hz, Latencia del pipeline en ms y RMSE de trayectoria).
 
 ## Para quién
 
-- **Investigadores del LabIAR (UNI):** Su público principal. Proveerá la base empírica, robusta y con pruebas unitarias para investigar y desarrollar mejoras en robótica aérea y visión artificial.
-- **Estudiantes y Contribuidores Técnicos:** Ingenieros que busquen entender cómo orquestar arquitecturas complejas asíncronas con Python, MAVSDK y modelos de Inteligencia Artificial en hardware real.
-- **Comunidad Científica:** Interesados en la lectura directa de telemetría y métricas rigurosas generadas automáticamente para la formulación y validación de _papers_.
+- **Investigadores y tesistas del LabIAR - UNI** que buscan una arquitectura de software modular, limpia y reproducible para experimentar con algoritmos de visión y control en aeronaves no tripuladas.
+- **Desarrolladores de robótica autónoma** que requieran integrar sistemas aéreos comerciales y cerrados (como el DJI Air 2S) con potentes pipelines externos de Inteligencia Artificial en estaciones terrestres.
+- **El jurado académico evaluador**, que necesita validar cuantitativa y rigurosamente los resultados de estabilidad, retraso temporal y precisión en la sustentación de la tesis.
 
 ## Principios
 
-_Las ideas rectoras que guían las decisiones de producto y técnicas. 3-5 puntos._
-
-- **Sustento Científico antes que Empírico** — Ninguna función se implementará al azar. Los modelos matemáticos (como la calibración geométrica de la cámara o sintonización PID) requieren fundamento técnico demostrable.
-- **Seguridad Inquebrantable (Safety-First)** — El dron opera en el mundo físico. Cualquier fallo en la cámara o excepción del código derivará siempre en una detención segura (hovering). El software jamás colapsará en vuelo.
-- **Desacoplamiento Estricto (Concurrencia)** — El pesado análisis de visión y el delicado lazo de control deben vivir en procesos concurrentes aislados (Productor-Consumidor). Un retraso en la cámara no debe afectar la estabilización de vuelo.
-- **Excelencia de Software** — El código será legible, modular, rigurosamente tipado (Type Hints) bajo estándar PEP 8, y validado sistemáticamente mediante pruebas automatizadas.
+- **Concurrencia y Asincronía Nativa** — El pesado pipeline de procesamiento de imagen (OpenCV, YOLO, Deep SORT) jamás debe bloquear ni ralentizar el lazo crítico de control de vuelo. La arquitectura debe descansar firmemente sobre programación no bloqueante (`asyncio`).
+- **Seguridad Física Absoluta** — La integridad de la aeronave, los operadores y el entorno de prueba del laboratorio es prioritaria. Todo comando enviado debe ser validado por la capa de seguridad en milisegundos; el software jamás debe colapsar catastróficamente en pleno vuelo.
+- **Rigor Matemático y Sustento Científico** — Cada algoritmo implementado (sintonización PID, estimación de distancia mediante diámetro cefálico promedio de 0.23 m, métricas estadísticas) debe contar con respaldo teórico sólido y formal. Queda prohibido el uso de aproximaciones empíricas sin justificación física.
+- **Reproducibilidad y Código Limpio** — El repositorio debe ser completamente reproducible. Esto exige un estilo estructurado (PEP 8), uso obligatorio de tipado estricto (Type Hints) y pruebas unitarias automáticas en espejo (`tests/`) para garantizar que cualquier miembro del laboratorio pueda replicar el sistema.
 
 ## Qué NO es
 
-_Acota el alcance: lo que el proyecto deliberadamente no pretende ser. Evita malentendidos y feature creep._
-
-- **NO es una app comercial plug-and-play.** Es una base de investigación de laboratorio, no un producto empaquetado para el consumidor final de drones de uso recreativo.
-- **NO soporta ni usará frameworks obsoletos (ej. DroneKit).** La arquitectura se limitará estrictamente al ecosistema moderno de `MAVSDK-Python` con `asyncio`.
-- **NO hace estimaciones ingenuas de posición.** La estimación de distancia nunca usará algoritmos que asuman proporciones de cuerpo completo (1.68 m) para evitar los conocidos errores de perspectiva por ángulo cenital; se basa estrictamente en la detección de la cabeza.
+- **No es una aplicación comercial de pilotaje o entretenimiento** — No está diseñada para vuelo recreativo, captura fotográfica o cinematografía; es un entorno estrictamente enfocado en la investigación científica de la robótica autónoma.
+- **No es un sistema de control de motores a bajo nivel** — Quillinchu AI no implementa el firmware del piloto automático ni interactúa directamente con los ESCs (Electronic Speed Controllers); delega la estabilidad de actitud básica en el hardware del dron y se concentra en enviar consignas de velocidad de alto nivel.
+- **No es una solución dependiente exclusivamente de pilotos automáticos de código abierto (PX4/ArduPilot)** — El sistema está diseñado específicamente para ser agnóstico y tolerar la integración con ecosistemas propietarios cerrados utilizando traductores de protocolo de red intermedios (como Rosetta Drone).
