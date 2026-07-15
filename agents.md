@@ -34,6 +34,7 @@ Plataforma modular de investigación para el seguimiento autónomo de personas m
 - No subas archivos de pesos binarios (`*.pt`, `*.onnx`) ni entornos virtuales (`.venv/`) al repositorio de GitHub. Valida siempre que estén activos en el `.gitignore`.
 - No calcules la estimación de distancia asumiendo que el cuadro delimitador de la cabeza equivale a la altura total de la persona (1.68 m). Si usas `HeadDetect.pt`, calibra el modelo para el diámetro promedio de una cabeza humana (~0.23 m).
 - No envíes comandos de velocidad directamente a MAVSDK sin pasar primero por los filtros de saturación y validación del módulo `src/safety/`.
+- Prohibido asumir que la cámara es local (webcam / ID 0). El flujo de video proviene del DJI Air 2S mediante la retransmisión UDP de Rosetta Drone (puerto 5600) o RTSP. Todo código de captura de imagen debe configurarse para recibir este stream de red de manera asíncrona.
 
 ## Flujo de trabajo
 - Antes de escribir una sola línea de código para un componente, lee y alíneate con su archivo de especificación en `spec/features/`. Si el archivo no existe, pide al usuario redactarlo.
