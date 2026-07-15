@@ -22,6 +22,43 @@ El proyecto está diseñado bajo un enfoque modular y asíncrono, estructurado d
 *   **Procesamiento Numérico**: NumPy, SciPy
 *   **Pruebas**: Pytest / Unittest
 
+## 📋 Requisitos del Sistema
+
+### Hardware de Desarrollo (Target LabIAR)
+- **Estación Terrena (Laptop)**: CPU Intel i7 (11ª Gen o superior), 16 GB de RAM, con sistema operativo **Ubuntu 22.04 LTS** o **Ubuntu 24.04 LTS**.
+- **Aeronave**: Dron **DJI Air 2S** con control remoto conectado a tablet que ejecute **Rosetta Drone**.
+
+### Dependencias del Sistema (Esenciales para GStreamer + OpenCV)
+Para que OpenCV pueda capturar y decodificar el flujo de video RTP/H.264 que transmite Rosetta Drone por la red local, es obligatorio instalar las librerías de GStreamer en Ubuntu. Ejecuta en tu terminal:
+
+```bash
+sudo apt update && sudo apt install -y \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev
+
+## 🔧 Instalación y Configuración del Entorno
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone [https://github.com/Gus7Ghost/quillinchu-ai.git](https://github.com/Gus7Ghost/quillinchu-ai.git)
+   cd quillinchu-ai
+  
+2. **Crear y activar el entorno virtual de Python:**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+
+3. **Instalar las dependencias de Python:**
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+
+
 ## 💻 Comandos Básicos
 
 ### Ejecución del Sistema
