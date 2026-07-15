@@ -1,21 +1,19 @@
-# Tareas: Detección y Tracking (001)
+# 001 · Detección y Tracking — Tareas
 
-- [ ] **1. Captura de Stream de Red**
-  - [ ] Implementar la clase `CameraStream` en `src/vision/camera.py`.
-  - [ ] Configurar OpenCV (con GStreamer si es necesario) para capturar el stream UDP de Rosetta Drone (`udp://127.0.0.1:5600`).
-  - [ ] Implementar lectura asíncrona/multihilo para evitar latencia por acumulación en el buffer.
+_Checklist accionable derivada del `plan.md`. Tareas pequeñas y concretas; marca `[x]` al completarlas._
 
-- [ ] **2. Detección con YOLOv8**
-  - [ ] Implementar la clase `HeadDetector` en `src/vision/detector.py`.
-  - [ ] Integrar el modelo pre-entrenado personalizado `HeadDetect.pt`.
-  - [ ] Crear pruebas unitarias con frames estáticos de validación.
+- [ ] Implementar clase `CameraStream` en `src/vision/camera.py` con lectura asíncrona (stream UDP `udp://127.0.0.1:5600`).
+- [ ] Implementar clase `HeadDetector` en `src/vision/detector.py` integrando YOLOv8 y el modelo `HeadDetect.pt`.
+- [ ] Implementar wrapper `SortTracker` en `src/vision/tracker.py` conectando las inferencias de YOLOv8 para mantener IDs únicos.
+- [ ] Construir clase `VisionPipeline` en `src/vision/pipeline.py` implementando el patrón Productor-Consumidor con colas no bloqueantes.
+- [ ] Implementar pruebas unitarias en `tests/test_vision.py` validando la lógica de tracking y persistencia de IDs.
+- [ ] Validar experimentalmente el rendimiento del pipeline (> 15 Hz) para asegurar que no hay latencia acumulada.
+- [ ] Validar contra los criterios de aceptación y restricciones de red/concurrencia de `spec.md`.
+- [ ] Mover la feature a "Hecho" en `../../constitution/roadmap.md`.
 
-- [ ] **3. Tracking con Deep SORT**
-  - [ ] Implementar el wrapper `SortTracker` en `src/vision/tracker.py`.
-  - [ ] Conectar los resultados de YOLOv8 (bboxes) para actualizar los tracks.
-  - [ ] Asegurar que los IDs se mantengan de manera persistente entre frames sucesivos.
+## Mantenimiento (checklist recurrente)
 
-- [ ] **4. Pipeline y Concurrencia**
-  - [ ] Construir la clase `VisionPipeline` en `src/vision/pipeline.py`.
-  - [ ] Implementar el patrón Productor-Consumidor con colas no bloqueantes (`multiprocessing.Queue` o similar).
-  - [ ] Validar experimentalmente que el pipeline funcione al menos a 15 Hz sin bloquear el hilo principal.
+_Opcional. Pasos a repetir cada vez que se toque esta feature en el futuro (revisar datos, regenerar algo, etc.). Borra esta sección si no aplica._
+
+- [ ] Re-verificar la compatibilidad del pipeline GStreamer/OpenCV ante cualquier cambio de entorno o red.
+- [ ] Perfilar el rendimiento (> 15 Hz) si se actualizan los pesos de `HeadDetect.pt` o se cambia de hardware base.
