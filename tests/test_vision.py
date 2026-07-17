@@ -13,6 +13,7 @@ References:
 
 from __future__ import annotations
 
+import asyncio
 import queue
 import threading
 import time
@@ -241,6 +242,115 @@ class TestCameraReader:
         assert frame1 is not frame2
 
         reader.stop()
+
+    @patch("src.vision.camera_reader.cv2.VideoCapture")
+    def test_read_async_returns_frame(self, mock_vc_class: MagicMock) -> None:
+        """read_async() devuelve el frame más reciente vía asyncio."""
+        dummy_frame = _make_dummy_frame()
+        mock_capture = MagicMock()
+        mock_capture.isOpened.return_value = True
+        mock_capture.read.return_value = (True, dummy_frame)
+        mock_vc_class.return_value = mock_capture
+
+        reader = CameraReader()
+        reader.start()
+        time.sleep(0.1)
+
+        async def _test() -> tuple[bool, Optional[np.ndarray]]:
+            return await reader.read_async()
+
+        ret, frame = asyncio.run(_test())
+        assert ret is True
+        assert frame is not None
+        assert frame.shape == dummy_frame.shape
+
+        reader.stop()
+
+    def test_read_async_before_start(self) -> None:
+        """read_async() devuelve (False, None) si no se ha iniciado."""
+        reader = CameraReader()
+
+        async def _test() -> tuple[bool, Optional[np.ndarray]]:
+            return await reader.read_async()
+
+        ret, frame = asyncio.run(_test())
+        assert ret is False
+        assert frame is None
+
+    @patch("src.vision.camera_reader.cv2.VideoCapture")
+    def test_context_manager(self, mock_vc_class: MagicMock) -> None:
+        """CameraReader funciona como context manager (with statement)."""
+        mock_capture = MagicMock()
+        mock_capture.isOpened.return_value = True
+        mock_capture.read.return_value = (True, _make_dummy_frame())
+        mock_vc_class.return_value = mock_capture
+
+        with CameraReader() as reader:
+            time.sleep(0.05)
+            assert reader._running is True
+
+        # Después de salir del bloque, debe estar detenido.
+        mock_capture.release.assert_called_once()
+
+    def test_property_accessors(self) -> None:
+        """Las propiedades port, width, height devuelven valores correctos."""
+        reader = CameraReader(port=5601, width=1920, height=1080)
+        assert reader.port == 5601
+        assert reader.width == 1920
+        assert reader.height == 1080
+
+    def test_repr(self) -> None:
+        """__repr__() muestra estado correcto."""
+        reader = CameraReader(port=5600, width=1280, height=720)
+        assert "5600" in repr(reader)
+        assert "1280x720" in repr(reader)
+        assert "stopped" in repr(reader)
+
+    @patch("src.vision.camera_reader.cv2.VideoCapture")
+    def test_stop_clears_frame_state(self, mock_vc_class: MagicMock) -> None:
+        """stop() limpia el frame almacenado y el flag de retorno."""
+        mock_capture = MagicMock()
+        mock_capture.isOpened.return_value = True
+        mock_capture.read.return_value = (True, _make_dummy_frame())
+        mock_vc_class.return_value = mock_capture
+
+        reader = CameraReader()
+        reader.start()
+        time.sleep(0.05)
+        reader.stop()
+
+        ret, frame = reader.read()
+        assert ret is False
+        assert frame is None
+
+    def test_gst_pipeline_contains_rtp_elements(self) -> None:
+        """El pipeline GStreamer incluye elementos esenciales RTP/H.264."""
+        reader = CameraReader()
+        pipeline = reader.gst_pipeline
+        assert "udpsrc" in pipeline
+        assert "rtph264depay" in pipeline
+        assert "h264parse" in pipeline
+        assert "avdec_h264" in pipeline
+        assert "videoconvert" in pipeline
+        assert "format=BGR" in pipeline
+
+    @patch("src.vision.camera_reader.cv2.VideoCapture")
+    def test_start_idempotent(self, mock_vc_class: MagicMock) -> None:
+        """Llamar start() dos veces no crea hilos duplicados."""
+        mock_capture = MagicMock()
+        mock_capture.isOpened.return_value = True
+        mock_capture.read.return_value = (True, _make_dummy_frame())
+        mock_vc_class.return_value = mock_capture
+
+        reader = CameraReader()
+        reader.start()
+        reader.start()  # No debe lanzar excepción ni crear otro hilo.
+
+        # VideoCapture solo se instanció una vez.
+        assert mock_vc_class.call_count == 1
+
+        reader.stop()
+
 
 
 # ===========================================================================
