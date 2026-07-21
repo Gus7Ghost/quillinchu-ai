@@ -16,8 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import FrozenInstanceError
-from typing import List
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -28,7 +27,6 @@ from src.control.mavlink_controller import (
     MavlinkController,
 )
 from src.vision import TargetState
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -90,9 +88,7 @@ def _create_mock_drone() -> MagicMock:
 
     # Core: connection_state como generador asíncrono.
     mock_drone.core = MagicMock()
-    mock_drone.core.connection_state.return_value = (
-        _mock_connection_state_connected()
-    )
+    mock_drone.core.connection_state.return_value = _mock_connection_state_connected()
 
     # Offboard plugin.
     mock_drone.offboard = MagicMock()
@@ -171,9 +167,7 @@ class TestGuidanceLaw:
     # Lista vacía
     # ---------------------------------------------------------------
 
-    def test_empty_targets_returns_none(
-        self, guidance: GuidanceLaw
-    ) -> None:
+    def test_empty_targets_returns_none(self, guidance: GuidanceLaw) -> None:
         """Sin objetivos, ``compute`` debe retornar ``None``."""
         result = guidance.compute([])
         assert result is None
@@ -182,9 +176,7 @@ class TestGuidanceLaw:
     # Selección de objetivo
     # ---------------------------------------------------------------
 
-    def test_selects_highest_confidence(
-        self, guidance: GuidanceLaw
-    ) -> None:
+    def test_selects_highest_confidence(self, guidance: GuidanceLaw) -> None:
         """Selecciona el target con mayor confianza."""
         low = _make_target(track_id=1, confidence=0.50)
         high = _make_target(track_id=2, confidence=0.95)
@@ -201,9 +193,7 @@ class TestGuidanceLaw:
     # Objetivo centrado → velocidad cero
     # ---------------------------------------------------------------
 
-    def test_centered_target_zero_velocity(
-        self, guidance: GuidanceLaw
-    ) -> None:
+    def test_centered_target_zero_velocity(self, guidance: GuidanceLaw) -> None:
         """Objetivo en el centro exacto produce velocidad cero."""
         target = _make_centered_target()
         result = guidance.compute([target])
@@ -417,9 +407,7 @@ class TestGuidanceLaw:
     # right_m_s y down_m_s siempre cero
     # ---------------------------------------------------------------
 
-    def test_lateral_and_vertical_always_zero(
-        self, guidance: GuidanceLaw
-    ) -> None:
+    def test_lateral_and_vertical_always_zero(self, guidance: GuidanceLaw) -> None:
         """right_m_s y down_m_s deben ser siempre 0.0."""
         target = _make_target()
         result = guidance.compute([target])
@@ -432,9 +420,7 @@ class TestGuidanceLaw:
     # Propiedades
     # ---------------------------------------------------------------
 
-    def test_params_property(
-        self, default_params: GuidanceParams
-    ) -> None:
+    def test_params_property(self, default_params: GuidanceParams) -> None:
         """La propiedad ``params`` devuelve la configuración inyectada."""
         guidance = GuidanceLaw(params=default_params)
         assert guidance.params == default_params
@@ -484,13 +470,9 @@ class TestMavlinkController:
         ``MavlinkConnectionError``.
         """
         mock_drone = _create_mock_drone()
-        mock_drone.core.connection_state.return_value = (
-            _mock_connection_state_timeout()
-        )
+        mock_drone.core.connection_state.return_value = _mock_connection_state_timeout()
 
-        controller = MavlinkController(
-            drone=mock_drone, connection_timeout_s=0.1
-        )
+        controller = MavlinkController(drone=mock_drone, connection_timeout_s=0.1)
 
         with pytest.raises(MavlinkConnectionError):
             await controller.connect()
@@ -526,9 +508,7 @@ class TestMavlinkController:
         mock_drone = _create_mock_drone()
         mock_drone.offboard.start = AsyncMock(
             side_effect=OffboardError(
-                MagicMock(
-                    result=MagicMock(result_str="NO_SETPOINT")
-                ),
+                MagicMock(result=MagicMock(result_str="NO_SETPOINT")),
                 "start()",
             )
         )
@@ -591,9 +571,7 @@ class TestMavlinkController:
         assert result is True
 
         # Verificar los argumentos exactos del último envío.
-        last_call = (
-            mock_drone.offboard.set_velocity_body.call_args
-        )
+        last_call = mock_drone.offboard.set_velocity_body.call_args
         velocity_body = last_call[0][0]
         assert velocity_body.forward_m_s == 1.0
         assert velocity_body.right_m_s == 0.5
@@ -631,9 +609,7 @@ class TestMavlinkController:
         # Simular error en el envío (no en start).
         mock_drone.offboard.set_velocity_body = AsyncMock(
             side_effect=OffboardError(
-                MagicMock(
-                    result=MagicMock(result_str="TIMEOUT")
-                ),
+                MagicMock(result=MagicMock(result_str="TIMEOUT")),
                 "set_velocity_body()",
             )
         )

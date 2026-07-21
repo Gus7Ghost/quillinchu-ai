@@ -146,13 +146,9 @@ class MavlinkController:
                 elif not was_connected and state.is_connected:
                     logger.info("Conexión MAVLink restablecida.")
         except asyncio.CancelledError:
-            logger.debug(
-                "Tarea de monitoreo de conexión cancelada."
-            )
+            logger.debug("Tarea de monitoreo de conexión cancelada.")
         except Exception as exc:
-            logger.error(
-                "Error en el monitor de conexión: %s", exc
-            )
+            logger.error("Error en el monitor de conexión: %s", exc)
 
     # ------------------------------------------------------------------
     # Modo Offboard
@@ -178,9 +174,7 @@ class MavlinkController:
             logger.info("Modo Offboard activado con éxito.")
         except OffboardError as exc:
             self._offboard_active = False
-            logger.error(
-                "Fallo al activar modo Offboard: %s", exc
-            )
+            logger.error("Fallo al activar modo Offboard: %s", exc)
             raise
 
     async def stop_offboard(self) -> None:
@@ -197,9 +191,7 @@ class MavlinkController:
             self._offboard_active = False
             logger.info("Modo Offboard desactivado.")
         except OffboardError as exc:
-            logger.error(
-                "Error al desactivar modo Offboard: %s", exc
-            )
+            logger.error("Error al desactivar modo Offboard: %s", exc)
 
     # ------------------------------------------------------------------
     # Envío de comandos de velocidad
@@ -238,14 +230,11 @@ class MavlinkController:
             )
             return True
         except OffboardError as exc:
-            logger.error(
-                "Error Offboard al enviar velocidad: %s", exc
-            )
+            logger.error("Error Offboard al enviar velocidad: %s", exc)
             return False
         except Exception as exc:
             logger.error(
-                "Error inesperado al enviar comando de "
-                "velocidad: %s",
+                "Error inesperado al enviar comando de " "velocidad: %s",
                 exc,
             )
             return False

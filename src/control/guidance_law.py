@@ -97,9 +97,7 @@ class GuidanceLaw:
             definidos en ``GuidanceParams``.
     """
 
-    def __init__(
-        self, params: Optional[GuidanceParams] = None
-    ) -> None:
+    def __init__(self, params: Optional[GuidanceParams] = None) -> None:
         self._params: GuidanceParams = (
             params if params is not None else GuidanceParams()
         )
@@ -107,9 +105,7 @@ class GuidanceLaw:
         self._cx: float = self._params.image_width / 2.0
         self._cy: float = self._params.image_height / 2.0
 
-    def compute(
-        self, targets: List[TargetState]
-    ) -> Optional[VelocityCommand]:
+    def compute(self, targets: List[TargetState]) -> Optional[VelocityCommand]:
         """Calcula la consigna de velocidad para el frame actual.
 
         Pipeline completo: selección → error → deadband → P → clamp.
@@ -168,9 +164,7 @@ class GuidanceLaw:
             yawspeed_deg_s=yawspeed,
         )
 
-    def _select_target(
-        self, targets: List[TargetState]
-    ) -> Optional[TargetState]:
+    def _select_target(self, targets: List[TargetState]) -> Optional[TargetState]:
         """Selecciona el objetivo con mayor confianza de detección.
 
         Args:
