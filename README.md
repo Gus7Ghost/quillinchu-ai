@@ -6,21 +6,21 @@ Plataforma modular de investigación para el seguimiento autónomo de personas m
 
 El proyecto está diseñado bajo un enfoque modular y asíncrono, estructurado de la siguiente manera:
 
-*   **`spec/`**: Especificaciones del sistema y flujo Spec-Driven Development (SDD).
-*   **`src/vision/`**: Detección de objetivos mediante YOLOv8 (`HeadDetect.pt`) y tracking mediante Deep SORT.
-*   **`src/control/`**: Controladores PID y algoritmos de estabilización.
-*   **`src/navigation/`**: Navegación autónoma y comunicación con el dron vía MAVSDK (sistema de coordenadas BODY_NED).
+*   **`spec/`**: Especificaciones del sistema, constitución y flujo Spec-Driven Development (SDD).
+*   **`src/vision/`**: Detección de objetivos mediante YOLOv8 (`HeadDetect.pt`), tracking continuo con Deep SORT (`TargetState`) y arquitectura Productor-Consumidor.
+*   **`src/control/`**: Leyes de guiado proporcional (`GuidanceLaw`), generación de consignas `VelocityCommand` y controlador de comunicaciones MAVLink asíncrono (`MavlinkController` vía MAVSDK).
+*   **`src/navigation/`**: Navegación autónoma y gestión de telemetría asíncrona.
 *   **`src/metrics/`**: Registro y cálculo de métricas científicas (Hz, Latencia, RMSE).
 *   **`src/safety/`**: Control de contingencias de seguridad, geofencing y Hovering autónomo.
-*   **`tests/`**: Suite de pruebas unitarias que replican la estructura del código fuente.
+*   **`tests/`**: Suite de pruebas unitarias que replican en espejo la estructura del código fuente (`tests/test_vision.py`, `tests/test_control.py`).
 
 ## 🛠️ Stack Tecnológico
 
-*   **Lenguaje**: Python 3.10+ (Tipado estricto con Type Hints)
+*   **Lenguaje**: Python 3.10+ (Tipado estricto con Type Hints y concurrencia asíncrona `asyncio`)
 *   **Visión e IA**: OpenCV, YOLOv8 (Ultralytics), Deep SORT
-*   **Navegación**: MAVSDK-Python (Asyncio nativo)
+*   **Control y Navegación**: MAVSDK-Python (Asyncio nativo, marco `BODY_NED`)
 *   **Procesamiento Numérico**: NumPy, SciPy
-*   **Pruebas**: Pytest / Unittest
+*   **Pruebas**: Pytest / Pytest-Asyncio / Unittest
 
 ## 📋 Requisitos del Sistema
 
@@ -40,24 +40,27 @@ sudo apt update && sudo apt install -y \
     gstreamer1.0-libav \
     libgstreamer1.0-dev \
     libgstreamer-plugins-base1.0-dev
+```
 
 ## 🔧 Instalación y Configuración del Entorno
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone [https://github.com/Gus7Ghost/quillinchu-ai.git](https://github.com/Gus7Ghost/quillinchu-ai.git)
+   git clone https://github.com/Gus7Ghost/quillinchu-ai.git
    cd quillinchu-ai
-  
+   ```
+
 2. **Crear y activar el entorno virtual de Python:**
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
+   ```
 
 3. **Instalar las dependencias de Python:**
    ```bash
    pip install --upgrade pip
    pip install -r requirements.txt
-
+   ```
 
 ## 💻 Comandos Básicos
 
@@ -69,8 +72,6 @@ python src/main.py
 ### Ejecutar Pruebas Unitarias
 ```bash
 pytest
-# o bien:
-python -m unittest discover tests
 ```
 
 ### Formateo y Estilo de Código (PEP 8)
