@@ -17,7 +17,7 @@ import asyncio
 import queue
 import threading
 import time
-from typing import Optional
+from typing import List, Optional
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import numpy as np
@@ -620,7 +620,7 @@ class TestVisionPipeline:
     def _build_mock_pipeline(
         self,
         num_targets: int = 1,
-    ) -> tuple[VisionPipeline, queue.Queue[TargetState]]:
+    ) -> tuple[VisionPipeline, queue.Queue[List[TargetState]]]:
         """Construye un VisionPipeline con componentes mock.
 
         Returns:
@@ -644,7 +644,7 @@ class TestVisionPipeline:
         ]
         mock_tracker.update.return_value = targets
 
-        output_queue: queue.Queue[TargetState] = queue.Queue(maxsize=4)
+        output_queue: queue.Queue[List[TargetState]] = queue.Queue(maxsize=4)
 
         pipeline = VisionPipeline(
             camera=mock_camera,
@@ -664,16 +664,18 @@ class TestVisionPipeline:
         pipeline.stop()
 
         assert not output_queue.empty()
-        target = output_queue.get_nowait()
-        assert isinstance(target, TargetState)
-        assert target.track_id == 1
+        targets = output_queue.get_nowait()
+        assert isinstance(targets, list)
+        assert len(targets) == 1
+        assert isinstance(targets[0], TargetState)
+        assert targets[0].track_id == 1
 
     def test_pipeline_non_blocking_publish(self) -> None:
         """La publicación no bloquea cuando la cola está llena."""
         pipeline, output_queue = self._build_mock_pipeline()
 
         # Cola de tamaño 1 para forzar el descarte.
-        small_queue: queue.Queue[TargetState] = queue.Queue(maxsize=1)
+        small_queue: queue.Queue[List[TargetState]] = queue.Queue(maxsize=1)
         pipeline._output_queue = small_queue
 
         pipeline.start()
@@ -729,7 +731,7 @@ class TestVisionPipeline:
 
         mock_detector = MagicMock(spec=HeadDetector)
         mock_tracker = MagicMock(spec=DeepSortTracker)
-        output_queue: queue.Queue[TargetState] = queue.Queue(maxsize=4)
+        output_queue: queue.Queue[List[TargetState]] = queue.Queue(maxsize=4)
 
         pipeline = VisionPipeline(
             camera=mock_camera,
@@ -747,17 +749,16 @@ class TestVisionPipeline:
         assert output_queue.empty()
 
     def test_pipeline_multiple_targets(self) -> None:
-        """El pipeline publica múltiples TargetState cuando hay varios tracks."""
+        """El pipeline publica la lista de múltiples TargetState en la cola."""
         pipeline, output_queue = self._build_mock_pipeline(num_targets=3)
 
         pipeline.start()
         time.sleep(0.15)
         pipeline.stop()
 
-        targets: list[TargetState] = []
-        while not output_queue.empty():
-            targets.append(output_queue.get_nowait())
-
-        assert len(targets) >= 1
+        assert not output_queue.empty()
+        targets = output_queue.get_nowait()
+        assert isinstance(targets, list)
+        assert len(targets) == 3
         for target in targets:
             assert isinstance(target, TargetState)
