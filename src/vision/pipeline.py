@@ -19,7 +19,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
@@ -56,13 +56,13 @@ class VisionPipeline:
         camera: CameraReader,
         detector: HeadDetector,
         tracker: DeepSortTracker,
-        output_queue: queue.Queue[TargetState],
+        output_queue: queue.Queue[List[TargetState]],
         max_queue_size: int = 1,
     ) -> None:
         self._camera: CameraReader = camera
         self._detector: HeadDetector = detector
         self._tracker: DeepSortTracker = tracker
-        self._output_queue: queue.Queue[TargetState] = output_queue
+        self._output_queue: queue.Queue[List[TargetState]] = output_queue
         self._max_queue_size: int = max_queue_size
 
         self._running: bool = False
@@ -117,37 +117,39 @@ class VisionPipeline:
             # Tracking con Deep SORT.
             targets = self._tracker.update(detections, frame)
 
-            # Publicar cada target en la cola (no bloqueante).
-            for target in targets:
-                self._publish(target)
+            # Publicar la lista completa del frame (no bloqueante).
+            self._publish(targets)
 
             # Actualizar métricas de FPS.
             self._update_fps()
 
         logger.info("Hilo Productor del VisionPipeline detenido.")
 
-    def _publish(self, target: TargetState) -> None:
-        """Publica un ``TargetState`` en la cola de salida.
+    def _publish(self, targets: List[TargetState]) -> None:
+        """Publica la lista completa de ``TargetState`` del frame actual.
 
-        Si la cola está llena, descarta el elemento más antiguo para
-        garantizar que el consumidor siempre acceda al estado más reciente.
+        Si la cola está llena, descarta la lista más antigua para
+        garantizar que el consumidor siempre acceda al estado más reciente
+        de la escena completa.
 
         Args:
-            target: Estado del objetivo a publicar.
+            targets: Lista de estados de todos los objetivos detectados
+                en el frame actual.
         """
         try:
-            self._output_queue.put_nowait(target)
+            self._output_queue.put_nowait(targets)
         except queue.Full:
             try:
-                # Descartar el elemento más antiguo.
+                # Descartar la lista más antigua.
                 self._output_queue.get_nowait()
             except queue.Empty:
                 pass
             try:
-                self._output_queue.put_nowait(target)
+                self._output_queue.put_nowait(targets)
             except queue.Full:
                 logger.warning(
-                    "Cola de salida llena — descartando TargetState."
+                    "Cola de salida llena — descartando lista de"
+                    " TargetState del frame."
                 )
 
     def _update_fps(self) -> None:
