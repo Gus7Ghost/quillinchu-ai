@@ -9,8 +9,8 @@ _Checklist accionable derivada del `plan.md`. Tareas pequeñas y concretas; marc
 - [x] Construir la clase `VisionPipeline` en `src/vision/pipeline.py` implementando el patrón Productor-Consumidor para publicar asíncronamente la información del objetivo (ID, bbox, timestamp) en una cola compartida.
 - [x] Implementar pruebas unitarias en `tests/test_vision.py` utilizando generadores de frames simulados (mocks) para validar la consistencia de los IDs de tracking y descartar fugas de memoria.
 - [x] Validar experimentalmente en la laptop de desarrollo del laboratorio que la tasa de procesamiento del pipeline de visión supere holgadamente la meta científica de los 15 Hz.
-- [ ] Validar contra los criterios de aceptación de `spec.md`.
-- [ ] Mover la feature a "Hecho" en `../../constitution/roadmap.md`.
+- [x] Validar contra los criterios de aceptación de `spec.md`.
+- [x] Mover la feature a "Hecho" en `../../constitution/roadmap.md`.
 
 ## Mantenimiento (checklist recurrente)
 

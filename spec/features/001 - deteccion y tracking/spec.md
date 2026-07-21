@@ -1,6 +1,6 @@
 # 001 · Detección y Tracking
 
-**Estado:** en curso
+**Estado:** completado
 
 ## Qué hace
 
@@ -15,16 +15,16 @@ Es el pilar fundamental de la autonomía de Quillinchu AI. Sin la capacidad de a
 _Condiciones verificables que deben cumplirse para dar la feature por terminada. Redacta cada una de forma que se pueda comprobar con un sí/no. Marca `[x]` al cumplirse._
 
 ### Comportamiento observable y comprobable
-- [ ] ¿El flujo de video se lee y decodifica correctamente desde el puerto UDP 5600 de Rosetta Drone sin depender de una cámara web conectada localmente por USB?
-- [ ] ¿El sistema dibuja con precisión cajas delimitadoras (bounding boxes) alrededor de las cabezas detectadas en el cuadro de video en vivo?
-- [ ] ¿El sistema asigna y renderiza en pantalla un identificador numérico persistente sobre la cabeza del objetivo mientras este permanezca en el campo de visión?
+- [x] ¿El flujo de video se lee y decodifica correctamente desde el puerto UDP 5600 de Rosetta Drone sin depender de una cámara web conectada localmente por USB?
+- [x] ¿El sistema dibuja con precisión cajas delimitadoras (bounding boxes) alrededor de las cabezas detectadas en el cuadro de video en vivo?
+- [x] ¿El sistema asigna y renderiza en pantalla un identificador numérico persistente sobre la cabeza del objetivo mientras este permanezca en el campo de visión?
 
 ### Caso límite o de error contemplado
-- [ ] ¿El algoritmo de tracking (Deep SORT) es capaz de retener y recuperar el mismo ID único del objetivo si este sufre una oclusión temporal corta (pérdida visual menor a 1 segundo o $30\text{ frames}$)?
+- [x] ¿El algoritmo de tracking (Deep SORT) es capaz de retener y recuperar el mismo ID único del objetivo si este sufre una oclusión temporal corta (pérdida visual menor a 1 segundo o $30\text{ frames}$)?
 
 ### Requisito de calidad
-- [ ] ¿El procesamiento visual expone los datos de salida (ID, bbox, timestamp) en una estructura de colas asíncrona no bloqueante que no interfiere con el lazo de navegación?
-- [ ] ¿La tasa de procesamiento (FPS) del pipeline de visión se mantiene de manera constante por encima de los 15 Hz en la laptop de desarrollo del laboratorio sin presentar congelamientos ni retraso acumulado por buffer?
+- [x] ¿El procesamiento visual expone los datos de salida (ID, bbox, timestamp) en una estructura de colas asíncrona no bloqueante que no interfiere con el lazo de navegación?
+- [x] ¿La tasa de procesamiento (FPS) del pipeline de visión se mantiene de manera constante por encima de los 15 Hz en la laptop de desarrollo del laboratorio sin presentar congelamientos ni retraso acumulado por buffer?
 
 ## Fuera de alcance
 
