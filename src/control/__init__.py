@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.control.pid import PIDController, PIDParams
+
 
 @dataclass(frozen=True, slots=True)
 class VelocityCommand:
@@ -42,5 +44,7 @@ class VelocityCommand:
 
 
 __all__: list[str] = [
+    "PIDController",
+    "PIDParams",
     "VelocityCommand",
 ]

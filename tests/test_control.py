@@ -40,8 +40,16 @@ def _make_target(
     x_max: float = 680.0,
     y_max: float = 400.0,
     confidence: float = 0.90,
+    timestamp: float | None = None,
 ) -> TargetState:
     """Crea un ``TargetState`` de prueba con valores predeterminados."""
+    if timestamp is not None:
+        return TargetState(
+            track_id=track_id,
+            bbox=(x_min, y_min, x_max, y_max),
+            confidence=confidence,
+            timestamp=timestamp,
+        )
     return TargetState(
         track_id=track_id,
         bbox=(x_min, y_min, x_max, y_max),
@@ -53,11 +61,19 @@ def _make_centered_target(
     image_width: int = 1280,
     image_height: int = 720,
     box_size: float = 50.0,
+    timestamp: float | None = None,
 ) -> TargetState:
     """Crea un ``TargetState`` centrado exactamente en la imagen."""
     cx: float = image_width / 2.0
     cy: float = image_height / 2.0
     half: float = box_size / 2.0
+    if timestamp is not None:
+        return TargetState(
+            track_id=1,
+            bbox=(cx - half, cy - half, cx + half, cy + half),
+            confidence=0.95,
+            timestamp=timestamp,
+        )
     return TargetState(
         track_id=1,
         bbox=(cx - half, cy - half, cx + half, cy + half),
@@ -432,6 +448,132 @@ class TestGuidanceLaw:
         cx, cy = guidance.image_center
         assert cx == pytest.approx(960.0)
         assert cy == pytest.approx(540.0)
+
+    # ---------------------------------------------------------------
+    # PID Integration (Feature 003)
+    # ---------------------------------------------------------------
+
+    def test_first_frame_proportional_only(self) -> None:
+        """Primer frame usa solo P (dt=0, sin spike I/D)."""
+        params = GuidanceParams(
+            kp_yaw=0.2,
+            ki_yaw=1.0,
+            kd_yaw=0.5,
+            kp_forward=0.005,
+            ki_forward=0.5,
+            kd_forward=0.1,
+            deadband_px=0.0,
+        )
+        guidance = GuidanceLaw(params=params)
+
+        # Centroide 50 px a la derecha, 80 px debajo del centro.
+        cx: float = 640.0 + 50.0
+        cy: float = 360.0 + 80.0
+        target = TargetState(
+            track_id=1,
+            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
+            confidence=0.9,
+            timestamp=1.0,
+        )
+
+        result = guidance.compute([target])
+        assert result is not None
+        # Primer frame: dt=0, solo término P.
+        assert result.yawspeed_deg_s == pytest.approx(0.2 * 50.0)
+        assert result.forward_m_s == pytest.approx(0.005 * 80.0)
+
+    def test_integral_contributes_over_time(self) -> None:
+        """Con ki > 0, llamadas repetidas acumulan la integral."""
+        params = GuidanceParams(
+            kp_yaw=0.0,
+            ki_yaw=1.0,
+            kd_yaw=0.0,
+            deadband_px=0.0,
+            integral_limit=1000.0,
+        )
+        guidance = GuidanceLaw(params=params)
+
+        # Error constante de 50 px horizontal.
+        cx: float = 640.0 + 50.0
+        cy: float = 360.0
+
+        # Frame 1 (t=1.0): dt=0 (primer frame) → output=0.
+        t1 = TargetState(
+            track_id=1,
+            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
+            confidence=0.9,
+            timestamp=1.0,
+        )
+        r1 = guidance.compute([t1])
+        assert r1 is not None
+        assert r1.yawspeed_deg_s == pytest.approx(0.0)
+
+        # Frame 2 (t=1.1): dt=0.1 → I = ki*e*dt = 1.0*50*0.1 = 5.0.
+        t2 = TargetState(
+            track_id=1,
+            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
+            confidence=0.9,
+            timestamp=1.1,
+        )
+        r2 = guidance.compute([t2])
+        assert r2 is not None
+        assert r2.yawspeed_deg_s == pytest.approx(5.0)
+
+        # Frame 3 (t=1.2): dt=0.1 → I = 5.0 + 5.0 = 10.0.
+        t3 = TargetState(
+            track_id=1,
+            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
+            confidence=0.9,
+            timestamp=1.2,
+        )
+        r3 = guidance.compute([t3])
+        assert r3 is not None
+        assert r3.yawspeed_deg_s == pytest.approx(10.0)
+
+    def test_reset_clears_pid_state(self) -> None:
+        """``reset()`` limpia el estado PID y el último timestamp."""
+        params = GuidanceParams(
+            kp_yaw=0.0,
+            ki_yaw=1.0,
+            deadband_px=0.0,
+            integral_limit=1000.0,
+        )
+        guidance = GuidanceLaw(params=params)
+
+        cx: float = 640.0 + 50.0
+        cy: float = 360.0
+
+        # Acumular integral.
+        t1 = TargetState(
+            track_id=1,
+            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
+            confidence=0.9,
+            timestamp=1.0,
+        )
+        t2 = TargetState(
+            track_id=1,
+            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
+            confidence=0.9,
+            timestamp=1.1,
+        )
+        guidance.compute([t1])
+        r = guidance.compute([t2])
+        assert r is not None
+        assert r.yawspeed_deg_s != 0.0
+
+        # Reset.
+        guidance.reset()
+
+        # Tras reset, primer frame → dt=0 → kp=0 → output=0.
+        t3 = TargetState(
+            track_id=1,
+            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
+            confidence=0.9,
+            timestamp=2.0,
+        )
+        r_reset = guidance.compute([t3])
+        assert r_reset is not None
+        assert r_reset.yawspeed_deg_s == pytest.approx(0.0)
 
 
 # ===========================================================================
