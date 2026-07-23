@@ -1,29 +1,23 @@
-# 003 · Control de Vuelo PID — Plan de Implementación
+# 003 · Control de Vuelo PID — Plan
 
-## 1. Módulo PID Abstracto (`src/control/pid.py`)
-- Crear el dataclass inmutable `PIDParams` para configurar las ganancias ($K_p$, $K_i$, $K_d$), el límite integral (`integral_limit`) y la constante de tiempo del filtro (`tau`).
-- Crear la clase `PIDController` con estado interno mutable (`_integral`, `_prev_error`, `_prev_derivative_filtered`).
-- Implementar el método `compute(error, dt)`:
-  - **Proporcional**: $P = K_p \cdot e$
-  - **Integral**: Acumular $\Delta I = K_i \cdot e \cdot dt$ y saturar inmediatamente (Anti-Windup) en el rango `[-integral_limit, +integral_limit]`.
-  - **Derivativo (Tustin)**: Calcular la derivada aplicando un filtro paso-bajo de primer orden discreto (transformada bilineal) para evitar que el ruido del bounding box genere comandos de control agresivos.
-  - **Seguridad dt**: Si $dt \le 0$, suprimir los cálculos I y D devolviendo únicamente el término P.
-- Implementar un método `reset()` para purgar el historial interno.
+## Enfoque
 
-## 2. Refactorización de la Ley de Guiado (`src/control/guidance_law.py`)
-- Ampliar el dataclass `GuidanceParams` para incluir las ganancias $K_i$ y $K_d$ separadas para `yaw` y `forward`, así como los parámetros `integral_limit` y `tau`.
-- En `GuidanceLaw.__init__`, reemplazar los cálculos estáticos por dos instancias de `PIDController` (una para `yaw` y otra para `forward`).
-- En `GuidanceLaw.compute()`, introducir el estado `_last_timestamp` para calcular el verdadero $dt$ entre fotogramas.
-  - Si el timestamp retrocede (anomalía temporal no monótona), hacer un reset del controlador PID de forma segura e informar mediante un warning en el logger.
-- Mantener los comportamientos críticos previos: selección del mejor target, aplicación de la zona muerta (deadband) sobre los errores de píxeles, y saturación general de salida (clamping).
+Se adoptará un diseño modular. Se creará una entidad puramente matemática (`PIDController`) separada de la lógica de guiado visual. Esto permite instanciar múltiples controladores para distintos ejes sin duplicar código. El controlador utilizará la ecuación estándar del PID de tiempo discreto:
+$$u(t) = K_p e(t) + K_i \int e(t) dt + K_d \frac{de}{dt}$$
 
-## 3. Suite de Pruebas Unitarias
-- **Matemáticas puras (`tests/test_pid.py`)**:
-  - Verificar que el término proporcional actúe en aislamiento.
-  - Validar la acumulación del término integral y el bloqueo en sus límites (Anti-Windup).
-  - Comprobar la atenuación del filtro derivativo ajustando la constante de tiempo $\tau$.
-  - Confirmar el comportamiento seguro cuando $dt = 0$.
-- **Integración (`tests/test_control.py`)**:
-  - Modificar los mocks/fixtures para añadir el campo `timestamp` al `TargetState`.
-  - Asegurar la retrocompatibilidad: con $K_i = K_d = 0$, el controlador debe superar exactamente los mismos tests que el proporcional puro de la Feature 002.
-  - Agregar tests para verificar el cálculo del dt y la propagación a lo largo del tiempo.
+El orquestador `GuidanceLaw` (Feature 002) será refactorizado internamente para sustituir la ganancia estática $K_p$ por instancias completas de este nuevo controlador PID, extrayendo el `dt` a partir de los `timestamp` que envía la cola de visión.
+
+## Implementación
+
+1. **Motor Matemático PID (`PIDController`)** — `src/control/pid.py`. Implementar una clase aislada que maneje el estado de un PID discreto, incluyendo historial de errores, acumulación integral con *anti-windup* y cálculo derivativo filtrado.
+2. **Refactorización del Guiado (`GuidanceLaw`)** — `src/control/guidance_law.py`. Sustituir las multiplicaciones simples por llamadas al método `update()` de las instancias de `PIDController`. Actualizar los `GuidanceParams` para incluir $K_i$, $K_d$ y coeficientes de filtro.
+3. **Suite de Pruebas Matemáticas** — `tests/test_pid.py`. Desarrollar pruebas unitarias inyectando valores de error artificiales con $dt$ fijos para comprobar que los sumatorios y divisiones matemáticas sean exactos a nivel de flotante. Actualizar `test_control.py` para reflejar la nueva firma del guiado.
+
+## Decisiones
+
+- **Filtro paso-bajo obligatorio en la Derivada** — Se decide aplicar un filtro exponencial al término derivativo. Dado que las redes neuronales como YOLOv8 tienen ruido inherente (la caja "vibra" píxel a píxel entre frames), una derivada pura amplificaría este ruido y destruiría los motores.
+- **Uso estricto de `timestamp` real** — Se descarta asumir un $dt$ fijo (ej. $1/15 \text{ Hz}$). Como el pipeline de visión es asíncrono y sujeto a latencias de red impredecibles, el PID debe usar la marca de tiempo originada en el momento exacto de la captura del frame.
+
+## Riesgos
+
+- **Inestabilidad por *Windup* Integral** — Si el objetivo se mueve muy rápido y el dron no puede alcanzarlo debido a los límites de saturación, el término $I$ crecerá descontroladamente. *Mitigación:* Implementar clamping condicional en el acumulador integral (Anti-Windup) acoplado a la saturación general.
