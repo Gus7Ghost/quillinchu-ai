@@ -12,14 +12,21 @@ _Features completadas, en orden de implementación._
 4. **[004 · Métricas Científicas](../features/004%20-%20metricas%20cientificas/)** — Reportes automatizados de rendimiento del sistema (Hz, latencia y RMSE).
 5. **[005 · Contingencias de Seguridad](../features/005%20-%20contingencias%20de%20seguridad/)** — Limitadores de velocidad, geofencing 3D y lógica de hovering autónomo por pérdida de tracking.
 
+## En curso 🏃‍♂️
+
+_La feature actualmente en desarrollo._
+
+1. **[006 · Orquestador Central](../features/006%20-%20orquestador%20central/)** — Script principal de entrada (`src/main.py`) que instancia e integra el pipeline de visión, control PID, filtro de seguridad y exportación de métricas mediante un lazo asíncrono.
+
 ## Siguiente 🔜
 
-_Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
+_Lo próximo a abordar tras terminar la actual._
 
-(Vacío)
+1. **[007 · Pruebas SITL Completas]** — Validación del sistema integrado en el simulador de ArduPilot antes del vuelo físico.
 
 ## Backlog / ideas 💡
 
 _Sin comprometer ni ordenar del todo. Ideas que respetan la constitución._
 
-> Cada feature nueva se crea como `features/NNN-nombre-feature/` con `spec.md`, `plan.md` y `tasks.md` antes de tocar código.
+- **[008 · Vuelo de Campo]** — Pruebas en exteriores (campus UNI) y sintonización fina de los valores Kp, Ki y Kd.
+- **Optimización de Inferencia** — Evaluar la conversión del modelo de YOLOv8 a TensorRT u ONNX si el procesador de la laptop requiere mayor holgura térmica.
