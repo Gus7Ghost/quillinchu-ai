@@ -12,6 +12,7 @@ El proyecto está diseñado bajo un enfoque modular y asíncrono, estructurado d
 *   **`src/navigation/`**: Navegación autónoma y gestión de telemetría asíncrona.
 *   **`src/metrics/`**: Registro y cálculo de métricas científicas (Hz, Latencia, RMSE).
 *   **`src/safety/`**: Control de contingencias de seguridad, geofencing y Hovering autónomo.
+*   **`src/main.py`**: **Orquestador Central**. Punto de entrada que integra todos los subsistemas en un único lazo asíncrono a 30Hz con apagado seguro y exportación de telemetría.
 *   **`tests/`**: Suite de pruebas unitarias que replican en espejo la estructura del código fuente (`tests/test_vision.py`, `tests/test_control.py`).
 
 ## 🛠️ Stack Tecnológico

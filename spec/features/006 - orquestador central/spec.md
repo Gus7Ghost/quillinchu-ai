@@ -1,6 +1,6 @@
 # 006 · Orquestador Central
 
-**Estado:** en curso
+**Estado:** hecho
 
 ## Qué hace
 
@@ -41,8 +41,8 @@ Actualmente, Quillinchu AI es un conjunto de piezas de software de alta calidad 
 
 ### Comportamiento observable y comprobable
 - [x] ¿El script `main.py` se ejecuta sin errores de sintaxis o importación?
-- [ ] ¿El sistema logra iniciar la captura de video asíncrona y la telemetría MAVSDK de forma simultánea?
-- [ ] ¿Al presionar `Ctrl+C` (KeyboardInterrupt), el dron detiene el modo Offboard, cierra la conexión asíncrona y exporta el archivo CSV de métricas exitosamente?
+- [x] ¿El sistema logra iniciar la captura de video asíncrona y la telemetría MAVSDK de forma simultánea?
+- [x] ¿Al presionar `Ctrl+C` (KeyboardInterrupt), el dron detiene el modo Offboard, cierra la conexión asíncrona y exporta el archivo CSV de métricas exitosamente?
 
 ### Caso límite o de error contemplado
 - [x] ¿El bucle principal maneja correctamente los instantes donde la cola de visión está vacía (sin saturar la CPU)?
