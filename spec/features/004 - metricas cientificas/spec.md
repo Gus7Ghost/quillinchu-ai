@@ -1,6 +1,6 @@
 # 004 · Métricas Científicas
 
-**Estado:** en curso
+**Estado:** completado
 
 ## Qué hace
 
@@ -13,18 +13,18 @@ Es el pilar de la validación académica del proyecto frente al jurado de la UNI
 ## Criterios de aceptación
 
 ### Comportamiento observable y comprobable
-- [ ] ¿El sistema exporta un archivo CSV utilizando nomenclatura consistente y trazable (ej. `exp_2026-07-23_Kp0.1_Kd0.01.csv`)?
-- [ ] ¿El archivo CSV incluye columnas explícitas para el Timestamp, Latencia, Error de Posición (X, Y) y Velocidad (Forward, Yaw)?
-- [ ] ¿Existe un script autónomo (`report_generator.py`) capaz de leer el CSV y generar gráficos de "Error vs Tiempo" (por época/iteración)?
-- [ ] ¿El generador de reportes imprime en consola una tabla de resultados formateada que incluye Configuración, Métrica Principal (RMSE, Hz) y Valor, lista para anexar al informe de avance?
+- [x] ¿El sistema exporta un archivo CSV utilizando nomenclatura consistente y trazable (ej. `exp_2026-07-23_Kp0.1_Kd0.01.csv`)?
+- [x] ¿El archivo CSV incluye columnas explícitas para el Timestamp, Latencia, Error de Posición (X, Y) y Velocidad (Forward, Yaw)?
+- [x] ¿Existe un script autónomo (`report_generator.py`) capaz de leer el CSV y generar gráficos de "Error vs Tiempo" (por época/iteración)?
+- [x] ¿El generador de reportes imprime en consola una tabla de resultados formateada que incluye Configuración, Métrica Principal (RMSE, Hz) y Valor, lista para anexar al informe de avance?
 
 ### Caso límite o de error contemplado
-- [ ] ¿El mecanismo de registro (logging) almacena la telemetría en memoria RAM y solo la escribe en el disco (I/O) al cerrarse el programa, garantizando cero micro-bloqueos en el lazo de vuelo?
-- [ ] ¿El script protege las métricas antiguas evitando sobrescribir experimentos pasados?
+- [x] ¿El mecanismo de registro (logging) almacena la telemetría en memoria RAM y solo la escribe en el disco (I/O) al cerrarse el programa, garantizando cero micro-bloqueos en el lazo de vuelo?
+- [x] ¿El script protege las métricas antiguas evitando sobrescribir experimentos pasados?
 
 ### Requisito de calidad
-- [ ] ¿El diseño del recolector es puramente pasivo y no interfiere con el `VisionPipeline` ni el `MavlinkController`?
-- [ ] ¿Las fórmulas estadísticas aplicadas (RMSE absoluto) están respaldadas por pruebas unitarias?
+- [x] ¿El diseño del recolector es puramente pasivo y no interfiere con el `VisionPipeline` ni el `MavlinkController`?
+- [x] ¿Las fórmulas estadísticas aplicadas (RMSE absoluto) están respaldadas por pruebas unitarias?
 
 ## Fuera de alcance
 
