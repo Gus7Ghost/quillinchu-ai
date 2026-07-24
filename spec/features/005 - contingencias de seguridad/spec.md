@@ -1,6 +1,6 @@
 # 005 · Contingencias de Seguridad
 
-**Estado:** en curso
+**Estado:** completado
 
 ## Qué hace
 
@@ -16,16 +16,16 @@ Para garantizar la integridad física de la aeronave, los operadores y el entorn
 ## Criterios de aceptación
 
 ### Comportamiento observable y comprobable
-- [ ] ¿El `SafetyFilter` intercepta y recorta (clamp) de forma estricta cualquier velocidad que supere los umbrales máximos configurados?
-- [ ] ¿El sistema implementa un temporizador que monitorea el último `timestamp` válido del objetivo?
-- [ ] ¿Si el temporizador supera el `failsafe_timeout`, el filtro emite automáticamente un comando de velocidades nulas (Hovering) ignorando al PID?
+- [x] ¿El `SafetyFilter` intercepta y recorta (clamp) de forma estricta cualquier velocidad que supere los umbrales máximos configurados?
+- [x] ¿El sistema implementa un temporizador que monitorea el último `timestamp` válido del objetivo?
+- [x] ¿Si el temporizador supera el `failsafe_timeout`, el filtro emite automáticamente un comando de velocidades nulas (Hovering) ignorando al PID?
 
 ### Caso límite o de error contemplado
-- [ ] ¿El filtro de seguridad es capaz de recuperarse fluidamente y devolverle el control al PID una vez que el pipeline de visión recupera el tracking de la persona?
+- [x] ¿El filtro de seguridad es capaz de recuperarse fluidamente y devolverle el control al PID una vez que el pipeline de visión recupera el tracking de la persona?
 
 ### Requisito de calidad
-- [ ] ¿Se eliminó completamente la lógica temporal de saturación (clamping) que residía dentro de `src/control/guidance_law.py` en la Feature 002/003?
-- [ ] ¿La suite de pruebas en `tests/test_safety.py` verifica de forma aislada las mutaciones de los comandos seguros, inseguros y de emergencia?
+- [x] ¿Se eliminó completamente la lógica temporal de saturación (clamping) que residía dentro de `src/control/guidance_law.py` en la Feature 002/003?
+- [x] ¿La suite de pruebas en `tests/test_safety.py` verifica de forma aislada las mutaciones de los comandos seguros, inseguros y de emergencia?
 
 ## Fuera de alcance
 

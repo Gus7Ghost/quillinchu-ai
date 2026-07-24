@@ -11,10 +11,16 @@ Flujo del cálculo:
     3. Aplicación de zonas muertas (deadband) para suprimir jitter.
     4. Cálculo del dt real a partir de los timestamps de TargetState.
     5. Ley PID: u = PIDController.compute(error, dt).
-    6. Saturación física (clamping) de velocidades.
+
+Nota:
+    Este módulo emite las velocidades crudas calculadas por los
+    controladores PID sin aplicar saturación física. La
+    responsabilidad de validación y clamping reside en el
+    middleware ``SafetyFilter`` (``src/safety/filter.py``,
+    Feature 005).
 
 References:
-    - spec.md §Criterios: Ley de guiado, saturación, deadband.
+    - spec.md §Criterios: Ley de guiado, deadband.
     - plan.md §2: Cálculo de Leyes de Guiado (GuidanceLaw).
     - tech-stack.md: «Cada algoritmo implementado debe contar con
       respaldo teórico sólido y formal».
@@ -42,6 +48,12 @@ class GuidanceParams:
     con sustento matemático (prohibido el ajuste empírico arbitrario,
     ver ``mission.md`` §Principios).
 
+    Nota:
+        Los límites de saturación física (``max_yaw_rate``,
+        ``max_linear_speed``) fueron migrados al dataclass
+        ``SafetyParams`` en ``src/safety/filter.py`` como parte
+        de la Feature 005 (Contingencias de Seguridad).
+
     Attributes:
         image_width: Ancho de la imagen del stream en píxeles.
         image_height: Alto de la imagen del stream en píxeles.
@@ -66,10 +78,6 @@ class GuidanceParams:
         deadband_px: Zona muerta simétrica en píxeles. Errores con
             magnitud inferior a este umbral se anulan para suprimir
             el jitter proveniente de variaciones del bounding box.
-        max_yaw_rate: Velocidad angular máxima de guiñada [°/s].
-            Límite de saturación para giros seguros.
-        max_linear_speed: Velocidad lineal máxima [m/s].
-            Límite de saturación para avance/retroceso seguros.
     """
 
     image_width: int = 1280
@@ -83,36 +91,29 @@ class GuidanceParams:
     integral_limit: float = 100.0
     tau: float = 0.01
     deadband_px: float = 15.0
-    max_yaw_rate: float = 30.0
-    max_linear_speed: float = 2.0
 
 
 class GuidanceLaw:
-    """Ley de guiado PID con zonas muertas y saturación.
+    """Ley de guiado PID con zonas muertas.
 
     Recibe la lista de ``TargetState`` publicada por el pipeline
     de visión (``queue.Queue[List[TargetState]]``), selecciona el
     objetivo con mayor confianza, calcula el error de píxeles
     respecto al centro de la imagen, aplica zonas muertas (deadband)
     para suprimir jitter, calcula el dt real a partir de los
-    timestamps de ``TargetState``, delega a controladores PID
-    independientes para yaw y forward, y satura (clamp) las
-    velocidades resultantes dentro de los límites de seguridad.
+    timestamps de ``TargetState`` y delega a controladores PID
+    independientes para yaw y forward.
+
+    Las velocidades retornadas por ``compute()`` son **crudas**
+    (sin saturación). La validación de seguridad y el clamping
+    físico se delegan al middleware ``SafetyFilter``
+    (``src/safety/filter.py``, Feature 005).
 
     Convenciones de signo del controlador:
         - ``eₓ > 0`` (objetivo a la derecha) → ``yawspeed > 0``
           (giro horario visto desde arriba).
         - ``eᵧ > 0`` (objetivo debajo del centro) → ``forward > 0``
           (avance longitudinal del dron).
-
-    TODO: La saturación física (clamping) aplicada en esta clase es
-        una medida temporal de seguridad. Esta responsabilidad deberá
-        migrar al módulo ``src/safety/`` cuando se implemente la
-        Feature 005 (Contingencias de Seguridad), que proveerá
-        validación centralizada, Geofencing 3D y filtros de
-        seguridad avanzados. Ver ``tech-stack.md`` §Límites duros:
-        «NINGÚN comando de velocidad puede enviarse directamente a
-        MAVSDK sin ser previamente validado por src/safety/».
 
     Args:
         params: Parámetros de configuración de la ley de guiado.
@@ -152,9 +153,12 @@ class GuidanceLaw:
         self._last_timestamp: Optional[float] = None
 
     def compute(self, targets: List[TargetState]) -> Optional[VelocityCommand]:
-        """Calcula la consigna de velocidad para el frame actual.
+        """Calcula la consigna de velocidad cruda para el frame actual.
 
-        Pipeline completo: selección → error → deadband → dt → PID → clamp.
+        Pipeline: selección → error → deadband → dt → PID.
+
+        Las velocidades retornadas NO están saturadas. El clamping
+        físico debe ser aplicado externamente por ``SafetyFilter``.
 
         Args:
             targets: Lista de objetivos detectados y rastreados en
@@ -162,8 +166,8 @@ class GuidanceLaw:
                 detecciones activas.
 
         Returns:
-            ``VelocityCommand`` con las velocidades calculadas, o
-            ``None`` si no hay objetivos que seguir.
+            ``VelocityCommand`` con las velocidades crudas del PID,
+            o ``None`` si no hay objetivos que seguir.
         """
         selected: Optional[TargetState] = self._select_target(targets)
         if selected is None:
@@ -213,13 +217,6 @@ class GuidanceLaw:
         # ----------------------------------------------------------
         yawspeed: float = self._pid_yaw.compute(ex, dt)
         forward: float = self._pid_forward.compute(ey, dt)
-
-        # ----------------------------------------------------------
-        # 6. Saturación física (clamping) — medida temporal.
-        # TODO: Migrar a src/safety/ (Feature 005).
-        # ----------------------------------------------------------
-        yawspeed = self._clamp(yawspeed, self._params.max_yaw_rate)
-        forward = self._clamp(forward, self._params.max_linear_speed)
 
         return VelocityCommand(
             forward_m_s=forward,
@@ -271,18 +268,6 @@ class GuidanceLaw:
             return 0.0
         return error
 
-    @staticmethod
-    def _clamp(value: float, limit: float) -> float:
-        """Satura un valor dentro del rango simétrico [-limit, +limit].
-
-        Args:
-            value: Valor a saturar.
-            limit: Límite absoluto (debe ser positivo).
-
-        Returns:
-            Valor saturado dentro de [-limit, +limit].
-        """
-        return max(-limit, min(value, limit))
 
     @property
     def params(self) -> GuidanceParams:

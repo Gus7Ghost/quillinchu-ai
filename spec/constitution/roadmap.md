@@ -10,12 +10,13 @@ _Features completadas, en orden de implementación._
 2. **[002 · Módulo de Control MAVLink y Guiado](../features/002%20-%20estimacion%20de%20distancia/)** — Comunicación asíncrona mediante MAVSDK-Python (`MavlinkController`), activación del modo Offboard, y ley de guiado proporcional (`GuidanceLaw`) con deadband y clamping de seguridad en el marco BODY_NED.
 3. **[003 · Control de Vuelo PID](../features/003%20-%20control%20de%20vuelo%20pid/)** — Implementación de controladores PID independientes y sintonización de la respuesta dinámica del dron.
 4. **[004 · Métricas Científicas](../features/004%20-%20metricas%20cientificas/)** — Reportes automatizados de rendimiento del sistema (Hz, latencia y RMSE).
+5. **[005 · Contingencias de Seguridad](../features/005%20-%20contingencias%20de%20seguridad/)** — Limitadores de velocidad, geofencing 3D y lógica de hovering autónomo por pérdida de tracking.
 
 ## Siguiente 🔜
 
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
 
-1. **[005 · Contingencias de Seguridad](../features/005%20-%20contingencias%20de%20seguridad/)** — Limitadores de velocidad, geofencing 3D y lógica de hovering autónomo por pérdida de tracking.
+(Vacío)
 
 ## Backlog / ideas 💡
 

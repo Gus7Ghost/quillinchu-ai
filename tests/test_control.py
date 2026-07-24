@@ -347,44 +347,25 @@ class TestGuidanceLaw:
         assert result.forward_m_s < 0.0
 
     # ---------------------------------------------------------------
-    # Saturación (clamping)
+    # Salida cruda (sin saturación — Feature 005)
     # ---------------------------------------------------------------
 
-    def test_clamping_limits_yaw(self) -> None:
-        """La velocidad angular se satura al máximo configurado."""
-        max_yaw = 20.0
+    def test_raw_output_not_clamped(self) -> None:
+        """``compute()`` retorna velocidades crudas sin saturación.
+
+        Tras la Feature 005, la responsabilidad de clamping migró
+        al ``SafetyFilter``. ``GuidanceLaw`` debe emitir el
+        esfuerzo de control puro del PID.
+        """
         params = GuidanceParams(
-            kp_yaw=1.0,  # Ganancia alta para forzar saturación.
+            kp_yaw=1.0,  # Ganancia alta → genera 500 °/s.
+            kp_forward=0.1,  # Ganancia alta → genera 30 m/s.
             deadband_px=0.0,
-            max_yaw_rate=max_yaw,
         )
         guidance = GuidanceLaw(params=params)
 
-        # Error de 500 px → v = 1.0 * 500 = 500 °/s (sin clamp).
+        # Error de 500 px horizontal, 300 px vertical.
         cx = 640.0 + 500.0
-        cy = 360.0
-        target = TargetState(
-            track_id=1,
-            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
-            confidence=0.9,
-        )
-
-        result = guidance.compute([target])
-        assert result is not None
-        assert result.yawspeed_deg_s == pytest.approx(max_yaw)
-
-    def test_clamping_limits_forward(self) -> None:
-        """La velocidad lineal se satura al máximo configurado."""
-        max_speed = 1.5
-        params = GuidanceParams(
-            kp_forward=0.1,  # Ganancia alta para forzar saturación.
-            deadband_px=0.0,
-            max_linear_speed=max_speed,
-        )
-        guidance = GuidanceLaw(params=params)
-
-        # Error de 300 px → v = 0.1 * 300 = 30 m/s (sin clamp).
-        cx = 640.0
         cy = 360.0 + 300.0
         target = TargetState(
             track_id=1,
@@ -394,30 +375,13 @@ class TestGuidanceLaw:
 
         result = guidance.compute([target])
         assert result is not None
-        assert result.forward_m_s == pytest.approx(max_speed)
 
-    def test_clamping_limits_negative(self) -> None:
-        """La saturación también funciona con valores negativos."""
-        max_yaw = 25.0
-        params = GuidanceParams(
-            kp_yaw=1.0,
-            deadband_px=0.0,
-            max_yaw_rate=max_yaw,
-        )
-        guidance = GuidanceLaw(params=params)
-
-        # Error de -500 px → v = 1.0 * (-500) = -500 °/s.
-        cx = 640.0 - 500.0
-        cy = 360.0
-        target = TargetState(
-            track_id=1,
-            bbox=(cx - 25, cy - 25, cx + 25, cy + 25),
-            confidence=0.9,
-        )
-
-        result = guidance.compute([target])
-        assert result is not None
-        assert result.yawspeed_deg_s == pytest.approx(-max_yaw)
+        # Valores crudos: sin clamping, superan cualquier límite
+        # razonable de seguridad.
+        # yawspeed = 1.0 * 500 = 500.0 °/s
+        assert result.yawspeed_deg_s == pytest.approx(500.0)
+        # forward = 0.1 * 300 = 30.0 m/s
+        assert result.forward_m_s == pytest.approx(30.0)
 
     # ---------------------------------------------------------------
     # right_m_s y down_m_s siempre cero
