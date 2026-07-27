@@ -35,6 +35,14 @@ class HeadDetector:
             ``HeadDetect.pt``).
         confidence: Umbral mínimo de confianza para aceptar una
             detección [0.0, 1.0] (default: 0.5).
+        iou_threshold: Umbral de IoU para Non-Maximum Suppression
+            [0.0, 1.0] (default: 0.45). Valores más bajos son más
+            agresivos al fusionar cajas solapadas. El default de
+            Ultralytics es 0.7, demasiado permisivo para detección
+            de cabezas donde las cajas se solapan fácilmente.
+        imgsz: Tamaño de entrada para la inferencia en píxeles
+            (default: 640). Valores menores aceleran la inferencia
+            en CPU a costa de precisión.
         device: Dispositivo de inferencia — ``"cpu"`` o ``"cuda"``
             (default: ``"cpu"``).
     """
@@ -43,19 +51,26 @@ class HeadDetector:
         self,
         weights_path: Union[str, Path] = "HeadDetect.pt",
         confidence: float = 0.5,
+        iou_threshold: float = 0.45,
+        imgsz: int = 640,
         device: str = "cpu",
     ) -> None:
         self._weights_path: Path = Path(weights_path)
         self._confidence: float = confidence
+        self._iou_threshold: float = iou_threshold
+        self._imgsz: int = imgsz
         self._device: str = device
 
         self._model: YOLO = YOLO(str(self._weights_path))
         self._model.to(self._device)
 
         logger.info(
-            "HeadDetector cargado — pesos: %s, confianza: %.2f, device: %s.",
+            "HeadDetector cargado — pesos: %s, confianza: %.2f, "
+            "iou_nms: %.2f, imgsz: %d, device: %s.",
             self._weights_path,
             self._confidence,
+            self._iou_threshold,
+            self._imgsz,
             self._device,
         )
 
@@ -94,6 +109,8 @@ class HeadDetector:
         results = self._model.predict(
             source=frame,
             conf=self._confidence,
+            iou=self._iou_threshold,
+            imgsz=self._imgsz,
             device=self._device,
             verbose=False,
         )
